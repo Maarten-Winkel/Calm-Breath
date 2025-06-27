@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calm Breath</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="light-mode">
+
+    <div class="theme-switcher-container">
+        <i class="fas fa-sun theme-icon" id="sun-icon"></i>
+        <i class="fas fa-moon theme-icon hidden" id="moon-icon"></i>
+    </div>
+
+    <main id="selection-page">
+        <header>
+            <h1>Calm Breath</h1>
+            <p>Find your calm. Select a breathing exercise to begin.</p>
+        </header>
+        <div class="card-container">
+            <div class="card" data-technique="balanced">
+                <h2>Balanced Breathing</h2>
+                <p>A 5-second inhale and a 5-second exhale to center yourself.</p>
+            </div>
+            <div class="card" data-technique="relaxing">
+                <h2>Relaxing Breath</h2>
+                <p>Inhale for 4, hold for 7, exhale for 8. Perfect for deep relaxation.</p>
+            </div>
+            <div class="card" data-technique="box">
+                <h2>Box Breathing</h2>
+                <p>Inhale for 4, hold for 4, exhale for 4, hold for 4. Build focus and control.</p>
+            </div>
+            <div class="card" data-technique="mindful">
+                <h2>Mindful Breath</h2>
+                <p>A 4-second inhale and a 6-second exhale to calm your nervous system.</p>
+            </div>
+            <div class="card" data-technique="energizing">
+                <h2>Energizing Breath</h2>
+                <p>Inhale for 4, hold for 2, exhale for 6. A boost for your day.</p>
+            </div>
+        </div>
+    </main>
+
+    <main id="exercise-page" class="hidden">
+        <button id="back-button"><i class="fas fa-times"></i></button>
+        
+        <div class="exercise-container">
+            <div class="ring-container">
+                <div class="ring"></div>
+                <div class="timer-display" id="phase-timer"></div>
+                <div class="instruction-display" id="instruction"></div>
+                <div class="initial-instruction-display" id="initial-instruction">Set timer and press play</div>
+            </div>
+        </div>
+        
+        <div class="session-controls">
+            <button id="play-pause-button"><i class="fas fa-play"></i></button>
+            <div id="session-timer-display">Set</div>
+            <button id="set-timer-button"><i class="fas fa-cog"></i></button>
+            <div id="timer-input-container" class="hidden">
+                <input type="number" id="timer-input" min="1" max="60" value="5">
+                <span>min</span>
+            </div>
+            <button id="stop-button"><i class="fas fa-stop"></i></button>
+        </div>
+
+        <div class="controls">
+            <div class="sound-control">
+                 <div class="custom-select-wrapper">
+                    <div id="selected-sound-display">None</div>
+                    <div class="custom-select">
+                        <div class="custom-select-trigger"><i class="fas fa-volume-up"></i></div>
+                        <div class="custom-options">
+                            <div class="custom-option selected" data-value="none">None</div>
+                            <div class="custom-option" data-value="focus">Focus</div>
+                            <div class="custom-option" data-value="piano">Piano</div>
+                            <div class="custom-option" data-value="rain">Rain</div>
+                            <div class="custom-option" data-value="stream">Stream</div>
+                        </div>
+                    </div>
+                </div>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

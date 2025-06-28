@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Feature Detection ---
+    const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
     // --- Element Selectors ---
     const sunIcon = document.getElementById('sun-icon');
     const moonIcon = document.getElementById('moon-icon');
@@ -28,11 +31,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTechnique = null;
     let isPaused = true;
     let exerciseStarted = false;
-    let totalSessionTime = 600; // Default 10 minutes
+    let totalSessionTime = 300; // Default 5 minutes
     let remainingSessionTime = totalSessionTime;
     const audio = new Audio();
     let currentPhaseIndex = 0;
     let remainingPhaseTime = 0;
+    let wakeLock = null;
 
     const techniques = {
         balanced: { name: 'Balanced Breathing', pattern: [{ instruction: 'Inhale', duration: 5 }, { instruction: 'Exhale', duration: 5 }] },
@@ -40,6 +44,41 @@ document.addEventListener('DOMContentLoaded', () => {
         box: { name: 'Box Breathing', pattern: [{ instruction: 'Inhale', duration: 4 }, { instruction: 'Hold', duration: 4 }, { instruction: 'Exhale', duration: 4 }, { instruction: 'Hold', duration: 4 }] },
         mindful: { name: 'Mindful Breath', pattern: [{ instruction: 'Inhale', duration: 4 }, { instruction: 'Exhale', duration: 6 }] },
         energizing: { name: 'Energizing Breath', pattern: [{ instruction: 'Inhale', duration: 4 }, { instruction: 'Hold', duration: 2 }, { instruction: 'Exhale', duration: 6 }] }
+    };
+
+    // --- Haptic Feedback ---
+    const vibrate = (pattern) => {
+        if ('vibrate' in navigator) {
+            try {
+                navigator.vibrate(pattern);
+            } catch (error) {
+                console.error("Haptic feedback failed:", error);
+            }
+        }
+    };
+
+    // --- Wake Lock ---
+    const requestWakeLock = async () => {
+        if ('wakeLock' in navigator) {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Screen Wake Lock is active.');
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+            }
+        }
+    };
+
+    const releaseWakeLock = async () => {
+        if (wakeLock !== null) {
+            try {
+                await wakeLock.release();
+                wakeLock = null;
+                console.log('Screen Wake Lock has been released.');
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+            }
+        }
     };
 
     // --- Theme Management ---
@@ -74,31 +113,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Exercise Logic ---
     const resetExerciseState = () => {
         stopExercise();
-        sessionTimerDisplay.textContent = "Set";
-        initialInstructionDisplay.classList.remove('hidden'); // Show initial instruction
-        instructionDisplay.classList.add('hidden'); // Hide in-ring instruction
-        totalSessionTime = 600; // Reset to default 10 minutes
-        timerInput.value = 10; // Reset input field to 10
-        // updateSessionTimerDisplay(); // DO NOT call here, keep it as 'Set'
-        selectedSoundDisplay.textContent = "None"; // Reset sound display
+        totalSessionTime = 300; // Reset to default 5 minutes
+        remainingSessionTime = totalSessionTime;
+        timerInput.value = 5; // Reset input field to 5
+        updateSessionTimerDisplay();
+        initialInstructionDisplay.classList.remove('hidden');
+        instructionDisplay.classList.add('hidden');
+        selectedSoundDisplay.textContent = "None";
         customOptions.forEach(opt => opt.classList.remove('selected'));
         document.querySelector('.custom-option[data-value="none"]').classList.add('selected');
     };
 
     const startExercise = () => {
-        if (totalSessionTime === 0) { // If user hasn't set a time, use default
-            totalSessionTime = 600; // 10 minutes
-            remainingSessionTime = totalSessionTime;
-            updateSessionTimerDisplay();
-        }
         exerciseStarted = true;
         isPaused = false;
         playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
         remainingSessionTime = totalSessionTime;
         updateSessionTimerDisplay();
         currentPhaseIndex = 0;
-        initialInstructionDisplay.classList.add('hidden'); // Hide initial instruction
-        instructionDisplay.classList.remove('hidden'); // Show in-ring instruction
+        initialInstructionDisplay.classList.add('hidden');
+        instructionDisplay.classList.remove('hidden');
+        requestWakeLock();
         runCycle(currentPhaseIndex);
         startSessionTimer();
     };
@@ -110,11 +145,14 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(phaseCountdownInterval);
         clearInterval(sessionTimerInterval);
         audio.pause();
-        audio.src = ''; // Clear audio source
-        ring.style.animation = ''; // Clear animation
-        ring.style.transform = 'scale(0.8)'; // Reset to initial state
+        audio.src = '';
+        ring.style.animation = '';
+        ring.style.transform = 'scale(0.8)';
         playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
         phaseTimerDisplay.textContent = '';
+        instructionDisplay.textContent = '';
+        initialInstructionDisplay.classList.remove('hidden');
+        releaseWakeLock();
     };
 
     const runCycle = (phaseIndex) => {
@@ -126,6 +164,9 @@ document.addEventListener('DOMContentLoaded', () => {
         instructionDisplay.textContent = phase.instruction;
         animateRing(phase.instruction, phase.duration);
         
+        if (phase.instruction === 'Inhale') vibrate(200);
+        else if (phase.instruction === 'Exhale') vibrate([100, 50, 100]);
+
         remainingPhaseTime = phase.duration;
         countdownPhase();
 
@@ -147,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const animateRing = (instruction, duration) => {
-        ring.classList.add('ring-animating');
         ring.style.animationPlayState = 'running';
         if (instruction === 'Inhale') {
             ring.style.animationName = 'ring-inhale';
@@ -155,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (instruction === 'Exhale') {
             ring.style.animationName = 'ring-exhale';
             ring.style.animationDuration = `${duration}s`;
-        } else { // Hold
+        } else {
             ring.style.animationPlayState = 'paused';
         }
     };
@@ -169,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateSessionTimerDisplay();
                 if (remainingSessionTime <= 0) {
                     stopExercise();
+                    vibrate([500, 100, 500]); // Vibrate on completion
                     alert('Session Complete!');
                     backButton.click();
                 }
@@ -182,7 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionTimerDisplay.textContent = `${minutes}:${seconds}`;
     };
 
-    setTimerButton.addEventListener('click', () => {
+    setTimerButton.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent closing from window listener
         if (!exerciseStarted) {
             timerInputContainer.classList.toggle('hidden');
         }
@@ -194,8 +236,11 @@ document.addEventListener('DOMContentLoaded', () => {
             totalSessionTime = newTime * 60;
             remainingSessionTime = totalSessionTime;
             updateSessionTimerDisplay();
-            timerInputContainer.classList.add('hidden');
         }
+    });
+    
+    timerInput.addEventListener('blur', () => { // Hide when focus is lost
+        timerInputContainer.classList.add('hidden');
     });
 
     // --- Controls ---
@@ -210,17 +255,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearInterval(phaseCountdownInterval);
                 ring.style.animationPlayState = 'paused';
                 audio.pause();
+                releaseWakeLock();
             } else {
                 resumeExercise();
                 ring.style.animationPlayState = 'running';
                 if (audio.src) audio.play();
+                requestWakeLock();
             }
         }
     });
 
     stopButton.addEventListener('click', () => {
         stopExercise();
-        resetExerciseState(); // Reset all state after stopping
+        resetExerciseState();
     });
 
     const resumeExercise = () => {
@@ -231,17 +278,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Audio Controls ---
-    customSelect.addEventListener('click', () => customSelect.classList.toggle('open'));
+    customSelect.addEventListener('click', (e) => {
+        e.stopPropagation();
+        customSelect.classList.toggle('open');
+    });
 
     customOptions.forEach(option => {
-        option.addEventListener('click', () => {
+        option.addEventListener('click', (e) => {
+            e.stopPropagation();
             const sound = option.getAttribute('data-value');
             const soundName = option.textContent;
-            selectedSoundDisplay.textContent = soundName; // Update display
+            selectedSoundDisplay.textContent = soundName;
 
-            // Remove 'selected' class from all options
             customOptions.forEach(opt => opt.classList.remove('selected'));
-            // Add 'selected' class to the clicked option
             option.classList.add('selected');
 
             if (sound === 'none') {
@@ -250,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 audio.src = `sounds/${sound}.mp3`;
                 audio.loop = true;
-                if (!isPaused || !exerciseStarted) audio.play();
+                if (!isPaused) audio.play();
             }
             customSelect.classList.remove('open');
         });
@@ -258,13 +307,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     volumeSlider.addEventListener('input', (e) => audio.volume = e.target.value);
 
-    // Close custom select when clicking outside
+    // --- Global Event Listeners ---
     window.addEventListener('click', (e) => {
-        if (!customSelectWrapper.contains(e.target)) {
+        // Close custom select if open
+        if (customSelect.classList.contains('open')) {
             customSelect.classList.remove('open');
         }
+        // Hide timer input if open and not the target
+        if (!timerInputContainer.classList.contains('hidden') && !timerInputContainer.contains(e.target) && e.target !== setTimerButton) {
+            timerInputContainer.classList.add('hidden');
+        }
     });
+    
+    // Add touchstart for faster response on mobile for certain buttons
+    if (isTouchDevice()) {
+        const quickActionButtons = [playPauseButton, stopButton, backButton];
+        quickActionButtons.forEach(button => {
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Prevent double-tap zoom and ghost clicks
+                button.click();
+            });
+        });
+    }
 
-    // Initial setup for session timer display
-    updateSessionTimerDisplay();
+    // Initial setup
+    resetExerciseState();
 });

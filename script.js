@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTechnique = null;
     let isPaused = true;
     let exerciseStarted = false;
-    let totalSessionTime = 300; // Default 5 minutes
+    let totalSessionTime = 600; // Default 10 minutes
     let remainingSessionTime = totalSessionTime;
     const audio = new Audio();
     let currentPhaseIndex = 0;
@@ -113,9 +113,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Exercise Logic ---
     const resetExerciseState = () => {
         stopExercise();
-        totalSessionTime = 300; // Reset to default 5 minutes
+        totalSessionTime = 600; // Reset to default 10 minutes
         remainingSessionTime = totalSessionTime;
-        timerInput.value = 5; // Reset input field to 5
+        timerInput.value = 10; // Reset input field to 10
         updateSessionTimerDisplay();
         initialInstructionDisplay.classList.remove('hidden');
         instructionDisplay.classList.add('hidden');

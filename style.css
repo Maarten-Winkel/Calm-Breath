@@ -398,8 +398,8 @@ body {
     }
 
     .ring-container {
-        width: 80vw;
-        height: 80vw;
+        width: 65vw; /* Adjusted to keep animation in bounds */
+        height: 65vw; /* Adjusted to keep animation in bounds */
     }
     
     .light-mode .ring, .dark-mode .ring {
@@ -438,7 +438,7 @@ body {
     }
 
     .controls {
-        bottom: 75px; /* Place above session controls */
+        bottom: 65px; /* Adjusted to be adjacent to session-controls */
         padding: 0.8rem 0;
     }
     
@@ -460,8 +460,8 @@ body {
 
 @media (max-width: 480px) {
     .ring-container {
-        width: 85vw;
-        height: 85vw;
+        width: 65vw; /* Adjusted to keep animation in bounds */
+        height: 65vw; /* Adjusted to keep animation in bounds */
     }
     
     .light-mode .ring, .dark-mode .ring {
@@ -481,7 +481,7 @@ body {
     }
     
     .controls {
-        bottom: 70px;
+        bottom: 60px; /* Adjusted to be adjacent to session-controls */
     }
     
     #play-pause-button, #set-timer-button, #stop-button, .custom-select-trigger {
